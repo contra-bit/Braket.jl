@@ -384,8 +384,10 @@ function ir(c::Circuit, ::Val{:OpenQASM}; serialization_properties::Serializatio
     ixs = map(ix->ir(ix, Val(:OpenQASM); serialization_properties=serialization_properties), c.instructions)
     if !isempty(c.result_types)
         rts = map(rt->ir(rt, Val(:OpenQASM); serialization_properties=serialization_properties), c.result_types)
-    elseif isempty(c.measure_targets) # measure all qubits if not explicitly specified
+    elseif isempty(c.measure_targets) && !isempty(filter(i -> i isa Instruction{Measure}, c.instructions)) # measure all qubits if not explicitly specified
         rts = ["b[$(idx-1)] = measure $(format(Int(qubit), serialization_properties));" for (idx, qubit) in enumerate(qubits(c))]
+    else 
+        rts = []
     end
     return OpenQasmProgram(header_dict[OpenQasmProgram], join(vcat(header, ixs, rts), "\n"), nothing)
 end
